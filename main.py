@@ -196,6 +196,7 @@ def update_discord_presence(rpc: DiscordRPC, vlc_config: tuple[str, str, str]) -
 
     status, error = fetch_vlc_status(host, port, password)
     if error:
+        rpc.clear_activity()
         return f"Failed to fetch VLC status: {error}"
 
     state = status.get('state')
