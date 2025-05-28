@@ -1,6 +1,7 @@
 # VLC-Discord-RPC
 
-Display your currently playing VLC music as Discord Rich Presence (with artwork support)
+Display your currently playing VLC music as Discord Rich Presence (with artwork support)  
+![Example](https://github.com/user-attachments/assets/01fb5d59-698c-44ee-8584-aee8d94b516e)
 
 ## Features
 
