@@ -1,6 +1,7 @@
 import hashlib
 import os
 
+import filetype
 from flask import Flask, request, jsonify, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -59,32 +60,38 @@ def upload_file():
         if not secure_name:
             return jsonify({'error': 'Invalid filename'}), 400
 
-    if file and allowed_file(file.filename):
-        file_content = file.read()
+    file_content = file.read()
 
-        if len(file_content) == 0:
-            return jsonify({'error': 'Empty file not allowed'}), 400
+    if len(file_content) == 0:
+        return jsonify({'error': 'Empty file not allowed'}), 400
 
-        file_hash = get_file_hash(file_content)
+    kind = filetype.guess(file_content)
+    if kind is None:
+        if not (file.filename and allowed_file(file.filename)):
+            return jsonify({'error': 'Cannot determine file type'}), 400
         extension = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"{file_hash}.{extension}"
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
+    else:
+        if kind.extension not in ALLOWED_EXTENSIONS:
+            return jsonify({'error': 'File type not allowed'}), 400
+        extension = kind.extension
 
-        if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(UPLOAD_FOLDER, mode=0o755)
+    file_hash = get_file_hash(file_content)
+    filename = f"{file_hash}.{extension}"
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        if not os.path.exists(file_path):
-            try:
-                with open(file_path, 'wb') as f:
-                    f.write(file_content)
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER, mode=0o755)
 
-            except IOError:
-                return jsonify({'error': 'Failed to save file'}), 500
+    if not os.path.exists(file_path):
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(file_content)
 
-        file_url = f"{BASE_URL}/files/{filename}"
-        return jsonify({'url': file_url})
+        except IOError:
+            return jsonify({'error': 'Failed to save file'}), 500
 
-    return jsonify({'error': 'File type not allowed'}), 400
+    file_url = f"{BASE_URL}/files/{filename}"
+    return jsonify({'url': file_url})
 
 
 @app.route('/files/<filename>') # Serving files through a web server like Nginx or Apache would be more efficient

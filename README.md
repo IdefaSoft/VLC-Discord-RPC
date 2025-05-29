@@ -51,7 +51,7 @@ For album artwork support, you can run the included Flask server:
 
 2. **Install Dependencies:**
    ```bash
-    pip install Flask flask_limiter
+    pip install Flask flask_limiter filetype
     ```
 
 3. **Run the artwork server:**
