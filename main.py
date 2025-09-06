@@ -59,7 +59,9 @@ def upload_artwork(artwork_path: str) -> str:
         return DEFAULT_ARTWORK
 
     try:
-        artwork_path = unquote(artwork_path.replace("file:///", "", 1))
+        artwork_path = ["/", ""][os.name == "nt"] + unquote(
+            artwork_path.replace("file:///", "", 1)
+        )
         if not os.path.isfile(artwork_path):
             return DEFAULT_ARTWORK
 

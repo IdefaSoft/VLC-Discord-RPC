@@ -18,6 +18,7 @@ Display your currently playing VLC music as Discord Rich Presence (with artwork 
 - Python 3.9+
 - VLC Media Player **with web interface enabled**
 - Discord Desktop
+- A computer running Linux or Windows
 
 ## VLC Setup
 
@@ -78,5 +79,3 @@ The presence will show:
 - **Album artwork** as the large image
 - **Play/pause status** as the small image
 - **Progress bar** with remaining time
-
-Disclaimer: This program may contain bugs. I've only tested it on Windows, so it may not work on other operating systems. If you encounter any issues, feel free to open an issue.
