@@ -13,10 +13,10 @@ from rpc import DiscordRPC, Activity, ActivityType, Timestamp, Asset
 
 CLIENT_ID = "1376645197450055691"
 
-ARTWORK_API_ENDPOINT = "" # Set this to your server's public URL. If left empty, it will use the default artwork
+ARTWORK_API_ENDPOINT = ""  # Set this to your server's public URL. If left empty, it will use the default artwork
 CACHE_FILE = Path(__file__).parent / "artwork_cache.json"
 
-AUDIO_EXTENSIONS = {'.mp3', '.flac', '.wav', '.ogg', '.aac', '.opus'}
+AUDIO_EXTENSIONS = {".mp3", ".flac", ".wav", ".ogg", ".aac", ".opus"}
 DEFAULT_ARTWORK = "vlc_logo"
 UPDATE_INTERVAL = 5
 
@@ -30,7 +30,7 @@ def log(message: str) -> None:
 def load_cache() -> None:
     if CACHE_FILE.exists():
         try:
-            with open(CACHE_FILE, 'r', encoding="utf-8") as f:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
                 artwork_cache.update(json.load(f))
         except json.JSONDecodeError:
             log(f"Error loading cache file {CACHE_FILE}. It may be corrupted.")
@@ -38,7 +38,7 @@ def load_cache() -> None:
 
 def save_cache() -> None:
     try:
-        with open(CACHE_FILE, 'w', encoding="utf-8") as f:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(artwork_cache, f)
     except Exception as e:
         log(f"Error saving cache file {CACHE_FILE}: {e}")
@@ -48,7 +48,7 @@ def get_file_hash(file_path: str) -> str:
     try:
         stat = os.stat(file_path)
         cache_string = f"{os.path.basename(file_path)}:{stat.st_size}:{stat.st_mtime}"
-        return hashlib.md5(cache_string.encode('utf-8')).hexdigest()
+        return hashlib.md5(cache_string.encode("utf-8")).hexdigest()
     except Exception as e:
         log(f"Error getting file info {file_path}: {e}")
         return ""
@@ -59,7 +59,7 @@ def upload_artwork(artwork_path: str) -> str:
         return DEFAULT_ARTWORK
 
     try:
-        artwork_path = unquote(artwork_path.replace('file:///', '', 1))
+        artwork_path = unquote(artwork_path.replace("file:///", "", 1))
         if not os.path.isfile(artwork_path):
             return DEFAULT_ARTWORK
 
@@ -69,13 +69,12 @@ def upload_artwork(artwork_path: str) -> str:
         elif file_hash == "":
             return DEFAULT_ARTWORK
 
-        with open(artwork_path, 'rb') as img_file:
-            files = {'file': img_file}
+        with open(artwork_path, "rb") as img_file:
+            files = {"file": img_file}
             response = requests.post(ARTWORK_API_ENDPOINT, files=files, timeout=10)
 
         if response.status_code == 200:
-            url = response.json().get('url')
-            if url:
+            if url := response.json().get("url"):
                 artwork_cache[file_hash] = url
                 save_cache()
                 return url
@@ -86,29 +85,30 @@ def upload_artwork(artwork_path: str) -> str:
 
 
 def get_vlc_web_interface_config() -> tuple[str, str, str]:
-    config = {'host': '127.0.0.1', 'port': '8080', 'password': ''}
+    config = {"host": "127.0.0.1", "port": "8080", "password": ""}
 
-    if os.name == 'nt':
-        vlc_config_path = Path(os.environ.get('APPDATA', '')) / 'vlc' / 'vlcrc'
+    if os.name == "nt":
+        vlc_config_path = Path(os.environ.get("APPDATA", "")) / "vlc" / "vlcrc"
     else:
-        vlc_config_path = Path.home() / '.config' / 'vlc' / 'vlcrc'
+        vlc_config_path = Path.home() / ".config" / "vlc" / "vlcrc"
     if not vlc_config_path.exists():
-        return config['host'], config['port'], config['password']
+        return config["host"], config["port"], config["password"]
 
-    with open(vlc_config_path, 'r', encoding='utf-8') as f:
+    with open(vlc_config_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    for key in ['host', 'port', 'password']:
-        match = re.search(rf'^http-{key}=(.+)', content, re.MULTILINE)
-        if match:
+    for key in ["host", "port", "password"]:
+        if match := re.search(rf"^http-{key}=(.+)", content, re.MULTILINE):
             config[key] = match.group(1).strip()
 
-    return config['host'], config['port'], config['password']
+    return config["host"], config["port"], config["password"]
 
 
-def fetch_vlc_status(host: str, port: str, password: str) -> tuple[Optional[dict], Optional[str]]:
+def fetch_vlc_status(
+    host: str, port: str, password: str
+) -> tuple[Optional[dict], Optional[str]]:
     url = f"http://{host}:{port}/requests/status.json"
-    auth = ('', password) if password else None
+    auth = ("", password) if password else None
 
     try:
         response = requests.get(url, auth=auth, timeout=5)
@@ -129,7 +129,12 @@ def fetch_vlc_status(host: str, port: str, password: str) -> tuple[Optional[dict
 
 
 def is_audio_file(status: dict) -> bool:
-    if not (filename := status.get('information', {}).get('category', {}).get('meta', {}).get('filename')):
+    if not (
+        filename := status.get("information", {})
+        .get("category", {})
+        .get("meta", {})
+        .get("filename")
+    ):
         return False
 
     file_extension = os.path.splitext(filename)[1].lower()
@@ -137,33 +142,35 @@ def is_audio_file(status: dict) -> bool:
 
 
 def extract_media_info(status: dict) -> tuple[str, str, str, int, int, bool, str]:
-    meta = status.get('information', {}).get('category', {}).get('meta', {})
+    meta = status.get("information", {}).get("category", {}).get("meta", {})
 
-    title = meta.get('title', 'Unknown Title')
-    artist = meta.get('artist', 'Unknown Artist')
-    album = meta.get('album', '')
-    artwork_url = meta.get('artwork_url', '')
+    title = meta.get("title", "Unknown Title")
+    artist = meta.get("artist", "Unknown Artist")
+    album = meta.get("album", "")
+    artwork_url = meta.get("artwork_url", "")
 
-    if title == 'Unknown Title' and 'filename' in meta:
-        filename = os.path.basename(meta['filename'])
+    if title == "Unknown Title" and "filename" in meta:
+        filename = os.path.basename(meta["filename"])
         name, _ = os.path.splitext(filename)
 
-        if ' - ' in name:
-            parts = name.split(' - ', 1)
-            if artist == 'Unknown Artist':
+        if " - " in name:
+            parts = name.split(" - ", 1)
+            if artist == "Unknown Artist":
                 artist = parts[0]
             title = parts[1]
         else:
             title = name
 
-    length = int(status.get('length', 0))
-    time_position = int(status.get('time', 0))
-    is_playing = status.get('state') == 'playing'
+    length = int(status.get("length", 0))
+    time_position = int(status.get("time", 0))
+    is_playing = status.get("state") == "playing"
 
     return title, artist, album, length, time_position, is_playing, artwork_url
 
 
-def create_discord_activity(media_info: tuple[str, str, str, int, int, bool, str]) -> Activity:
+def create_discord_activity(
+    media_info: tuple[str, str, str, int, int, bool, str],
+) -> Activity:
     title, artist, album, length, position, is_playing, artwork_url = media_info
 
     timestamps = None
@@ -177,7 +184,7 @@ def create_discord_activity(media_info: tuple[str, str, str, int, int, bool, str
         large_image=upload_artwork(artwork_url),
         large_text=album if album else "No Album",
         small_image="playing" if is_playing else "paused",
-        small_text="Playing" if is_playing else "Paused"
+        small_text="Playing" if is_playing else "Paused",
     )
 
     activity = Activity(
@@ -185,13 +192,15 @@ def create_discord_activity(media_info: tuple[str, str, str, int, int, bool, str
         state=artist,
         activity_type=ActivityType.LISTENING,
         timestamps=timestamps,
-        assets=assets
+        assets=assets,
     )
 
     return activity
 
 
-def update_discord_presence(rpc: DiscordRPC, vlc_config: tuple[str, str, str]) -> Optional[str]:
+def update_discord_presence(
+    rpc: DiscordRPC, vlc_config: tuple[str, str, str]
+) -> Optional[str]:
     host, port, password = vlc_config
 
     status, error = fetch_vlc_status(host, port, password)
@@ -199,16 +208,15 @@ def update_discord_presence(rpc: DiscordRPC, vlc_config: tuple[str, str, str]) -
         rpc.clear_activity()
         return f"Failed to fetch VLC status: {error}"
 
-    state = status.get('state')
-    if state not in ['playing', 'paused'] or not is_audio_file(status):
+    state = status.get("state")
+    if state not in ["playing", "paused"] or not is_audio_file(status):
         rpc.clear_activity()
         return
 
     media_info = extract_media_info(status)
     activity = create_discord_activity(media_info)
 
-    success = rpc.set_activity(activity.to_dict())
-    if not success:
+    if not rpc.set_activity(activity.to_dict()):
         return "Failed to update Discord rich presence"
 
 
@@ -226,8 +234,7 @@ def run_discord_rpc(client_id: str, update_interval: int) -> None:
 
     try:
         while True:
-            error = update_discord_presence(rpc, vlc_config)
-            if error:
+            if error := update_discord_presence(rpc, vlc_config):
                 log(error)
 
             time.sleep(update_interval)
